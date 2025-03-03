@@ -1,0 +1,10 @@
+# build outputs
+*/build/**
+*/submission/**
+
+# givens
+*/spec.pdf
+*/samples/**
+
+# misc files
+**.code-workspace
