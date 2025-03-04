@@ -19,9 +19,9 @@ struct args {
   char *error;
 };
 
-struct args parseArgs(int argc, char *argv[]) {
-
-}
+// struct args parseArgs(int argc, char *argv[]) {
+//   return NULL;
+// }
 
 
 struct PipedChild {
@@ -42,7 +42,6 @@ struct PipedChild {
  *             file being executed. The array of pointers must be terminated by
  *             a null pointer.
  */
-
  struct PipedChild createPipedChild(char *program, char *argv[]) {
   // TODO
 
@@ -127,13 +126,14 @@ int main(int argc, char *argv[]) {
   // three arguments from command line
   // num1 from scanf
   // spawn left child
-
   // decide what operation im doing: left or right
   // spawn right child, get result
   // printf result from right child
   // done
+  
+  int r = doProgram("./right", 10, 12);
+  printf("./right 10 12 result: %d", r);
 
-
-  printf("Hello World!\n");
+  // printf("Hello World!\n");
   return 0;
 }
