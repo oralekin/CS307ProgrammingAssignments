@@ -1,14 +1,14 @@
-all: left right treePipe
+all: build/left build/right treePipe
 
-debug: left right tpDebug
+debug: build/left build/right build/treePipe.debug
 
-treePipe: treePipe.c
+build/treePipe: treePipe.c
 	gcc -o build/treePipe treePipe.c -Wall
 
-tpDebug: treePipe.c
+build/treePipe.debug: treePipe.c
 	gcc -o build/treePipe.debug treePipe.c -Wall -g
 
-left: pl.c
+build/left: pl.c
 	gcc -o build/left pl.c -Wall
-right: pr.c
+build/right: pr.c
 	gcc -o build/right pr.c -Wall
