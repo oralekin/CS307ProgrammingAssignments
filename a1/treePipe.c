@@ -108,8 +108,9 @@ int doProgram(char *program, int num1, int num2) {
 
 
   // also from assignment suggestion: use dprintf?
-  dprintf(child.tx, "&%d", num1);
-  dprintf(child.tx, "&%d", num2);
+
+  // wait for child to finish executing
+  waitpid(child.pid, NULL, 0);
 
   // read 11 bytes because we know by spec that it is max 10
   char r_buffer[11];
