@@ -94,10 +94,24 @@ int doProgram(char *program, int num1, int num2) {
   char* argv[] = {program};
   struct PipedChild child = createPipedChild(program, argv);
   
-  // char num1_s[11];
-  // from manpage: dprintf writes to given fd
-  dprintf(child.tx, "%d", num1);
-  dprintf(child.tx, "%d", num2);
+  // from assignment spec, strings through pipe are max length 10
+  // when writing to pipe, string should be null terminated.
+  char w_buffer[11];
+  w_buffer[10] = NULL;
+
+  // from manpage: writes max n characters into some string
+  snprintf(w_buffer, 10, "%d", num1);
+  if (write(child.tx, w_buffer, 11) == -1) exit(1);
+  
+  // same for num2
+  snprintf(w_buffer, 10, "%d", num2);
+  if (write(child.tx, w_buffer, 11) == -1) exit(1);
+
+
+  // read 11 bytes because we know by spec that it is max 10
+  char r_buffer[11];
+  if (read(child.rx, r_buffer, 11) == -1) exit(1);
+  return (atoi(r_buffer));
 
   // TODO: read from child and parse
   return -1;
