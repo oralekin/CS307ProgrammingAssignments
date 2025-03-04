@@ -108,8 +108,8 @@ int doProgram(char *program, int num1, int num2) {
 
 
   // also from assignment suggestion: use dprintf?
-  dprintf(child.tx, "%d", num1);
-  dprintf(child.tx, "%d", num2);
+  dprintf(child.tx, "%d\n", num1);
+  dprintf(child.tx, "%d\n", num2);
 
   // wait for child to finish executing
   waitpid(child.pid, NULL, 0);
