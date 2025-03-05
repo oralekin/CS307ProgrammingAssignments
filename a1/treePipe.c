@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <string.h>
 
 enum side {
   L = 0,
@@ -20,9 +21,30 @@ struct args {
   char *error;
 };
 
-// struct args parseArgs(int argc, char *argv[]) {
-//   return NULL;
-// }
+struct args args_err(char* message) {
+  struct args r = {
+    -1, -1, -1,
+    strdup(message)
+  };
+  return r;
+}
+
+
+
+struct args parseArgs(int argc, char *argv[]) {
+  if (argc != 4) return args_err("Wrong arguments.");
+  
+  struct args args = {
+    atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
+    NULL
+  };
+
+  // validation
+  if (args.curDepth > args.maxDepth) return args_err("curDepth must be less than or equal to ma");
+  if (args.lr != L && args.lr != R) return args_err("lr must be one of 0, 1");
+
+  return args;
+}
 
 
 struct PipedChild {
