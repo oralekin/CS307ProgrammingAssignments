@@ -151,9 +151,15 @@ int doNode(char* program, int num1, struct args childArgs) {
     argv[3][1] = '\0';
   } else exit(1); // something went wrong???
 
-  return -1;
+  // same as doLR, see that for info
+  struct PipedChild child = createPipedChild(program, argv);
+  dprintf(child.tx, "%d\n", num1);
 
-  // struct PipedChild child = createPipedChild(program, argv);
+  waitpid(child.pid, NULL, 0);
+
+  char r_buffer[11];
+  if (read(child.rx, r_buffer, 11) == -1) exit(1);
+  return (atoi(r_buffer));
 }
 
 
