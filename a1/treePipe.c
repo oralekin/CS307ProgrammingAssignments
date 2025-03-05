@@ -119,9 +119,38 @@ int doLR(char *program, int num1, int num2) {
   char r_buffer[11];
   if (read(child.rx, r_buffer, 11) == -1) exit(1);
   return (atoi(r_buffer));
+}
 
-  // TODO: read from child and parse
+/**
+ * @brief wraps createPipedChild
+ * 
+ * creates and runs a new node until it exits
+ * returns printed nuber from the node
+ */
+int doNode(char* program, int num1, struct args childArgs) {
+  char* argv[4] = {program};
+
+  // argument 1 curDepth
+  // maximum depth is 2 so we can safely assume depth arguments are 4 characters.
+  argv[1] = malloc(sizeof(char) * (4 + 1)); // +1 for null terminator
+  sprintf(argv[1], "%d", childArgs.curDepth); 
+
+  // argument 2 maxDepth
+  // maximum depth is 2 so we can safely assume depth arguments are 4 characters.
+  argv[2] = malloc(sizeof(char) * (4 + 1));
+  sprintf(argv[2], "%d", childArgs.maxDepth);
+
+  // argument 3 lr
+  // this is a single character of 0 or 1
+  argv[3] = malloc(sizeof(char) * (1 + 1));
+  if (childArgs.lr == L) *(argv[3]) = "0";
+  else if (childArgs.lr == R) *(argv[3]) = "1";
+  else exit(1); // something went wrong???
+  argv[3] = malloc(sizeof(char) + 1);
+  
   return -1;
+
+  // struct PipedChild child = createPipedChild(program, argv);
 }
 
 
