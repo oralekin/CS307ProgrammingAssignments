@@ -143,11 +143,14 @@ int doNode(char* program, int num1, struct args childArgs) {
   // argument 3 lr
   // this is a single character of 0 or 1
   argv[3] = malloc(sizeof(char) * (1 + 1));
-  if (childArgs.lr == L) *(argv[3]) = "0";
-  else if (childArgs.lr == R) *(argv[3]) = "1";
-  else exit(1); // something went wrong???
-  argv[3] = malloc(sizeof(char) + 1);
-  
+  if (childArgs.lr == L) {
+    argv[3][0] = '0';
+    argv[3][1] = '\0';
+  } else if (childArgs.lr == R) {
+    argv[3][0] = '1';
+    argv[3][1] = '\0';
+  } else exit(1); // something went wrong???
+
   return -1;
 
   // struct PipedChild child = createPipedChild(program, argv);
