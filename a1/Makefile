@@ -1,4 +1,4 @@
-all: build/left build/right treePipe
+all: build/left build/right build/treePipe
 
 debug: build/left build/right build/treePipe.debug
 
