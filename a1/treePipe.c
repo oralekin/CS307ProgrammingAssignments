@@ -66,10 +66,8 @@ struct PipedChild {
  *             a null pointer.
  */
  struct PipedChild createPipedChild(char *program, char *argv[]) {
-  // TODO
-
   // create two pipes, one to send, one to recieve 
-  // (parent) [send, recieve]
+  // (parent) [send (tx), recieve (rx)]
   // inside: [ read, write ]
   int pipes[2][2];
   if (pipe(pipes[0]) == -1) exit(1);
@@ -77,12 +75,14 @@ struct PipedChild {
 
   int pid = fork();
   
+  // some kinda error
   if (pid == -1) exit(1);
 
-  if (pid) {// is parent
+  if (pid) {
+    // is parent
     // close child ends of pipes
-    close(pipes[0][0]);
-    close(pipes[1][1]);
+    close(pipes[0][0]); /// send pipe, close read end
+    close(pipes[1][1]); // recieve pipe, close write end
     struct PipedChild r = {
       pid, pipes[0][1], pipes[1][0]
     };
@@ -98,9 +98,11 @@ struct PipedChild {
 
     // go into whatever program
     execvp(program, argv);
+
+    // exec only returns if problem.
+    exit(1);
   }
 
-  exit(1); // normally unreachable?
 }
 
 
@@ -113,9 +115,8 @@ struct PipedChild {
  */
 int doLR(char *program, int num1, int num2) {
 
-  char* argv[] = {program};
+  char* argv[] = {program, NULL}; // argv must be null terminated
   struct PipedChild child = createPipedChild(program, argv);
-  
   // // from assignment spec, strings through pipe are max length 10
   // // when writing to pipe, string should be null terminated.
   // char w_buffer[11];
@@ -150,7 +151,8 @@ int doLR(char *program, int num1, int num2) {
  * returns printed nuber from the node
  */
 int doNode(char* program, int num1, struct args childArgs) {
-  char* argv[4] = {program};
+  char* argv[5] = {program};
+  argv[4] = NULL; // must be null terminated.
 
   // argument 1 curDepth
   // maximum depth is 2 so we can safely assume depth arguments are 4 characters.
