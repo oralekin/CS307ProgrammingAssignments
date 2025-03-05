@@ -10,7 +10,7 @@
       "preLaunchTask": "build debug",
       "request": "launch",
       "program": "${workspaceFolder}/build/treePipe.debug",
-      "args": [],
+      "args": ["0", "1", "0"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build",
       "environment": [],
