@@ -47,6 +47,11 @@ struct args parseArgs(int argc, char *argv[]) {
 }
 
 
+/**
+ * pid: pid of child
+ * tx:  file descriptor of pipe end this process can write to
+ * rx   file descriptor of pipe end this process should read from
+ */
 struct PipedChild {
   // pid of the child
   int pid;
