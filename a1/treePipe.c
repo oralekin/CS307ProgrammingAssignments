@@ -1,3 +1,7 @@
+/**
+ * 
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -193,18 +197,50 @@ int doNode(char* program, int num1, struct args childArgs) {
 
 
 int main(int argc, char *argv[]) {
-
   // three arguments from command line
-  // num1 from scanf
-  // spawn left child
-  // decide what operation im doing: left or right
-  // spawn right child, get result
-  // printf result from right child
-  // done
-  
-  int r = doProgram("./right", 10, 12);
-  printf("./right 10 12 result: %d", r);
+  struct args args = parseArgs(argc, argv);
+  fprintf(stderr, "args in number: %d %d %d\n", args.curDepth, args.maxDepth, args.lr);
 
-  // printf("Hello World!\n");
+  // num1 from scanf
+  int num1;
+
+  // shamelessly lifted from provided pr.c
+  scanf("%d", &num1);
+  fprintf(stderr, "im depth=%d and got passed num1=%d\n", args.curDepth, num1);
+
+  // spawn left child for num2 unless im leaf
+  int num2 = 1;
+  if (args.curDepth != args.maxDepth) {
+    struct args childArgs = {
+      args.curDepth + 1,
+      args.maxDepth,
+      L, 
+      NULL
+    };
+    num2 = doNode(argv[0], num1, childArgs);
+  }
+
+  fprintf(stderr, "im depth=%d and read num2=%d\n", args.curDepth, num2);
+
+  // decide what operation im doing: left or right
+  if (args.lr == L) {
+    num2 = doLR("./left", num1, num2);
+  } else if (args.lr == R) {
+    num2 = doLR("./right", num1, num2);
+  } else exit(1);
+
+  // spawn right child, get result
+  if (args.curDepth != args.maxDepth) { 
+    struct args childArgs = {
+      args.curDepth + 1,
+      args.maxDepth,
+      R, 
+      NULL
+    };
+    num2 = doNode(argv[0], num2, childArgs);
+  }
+  // printf result
+  printf("%d\n", num2);
+  // done  
   return 0;
 }
