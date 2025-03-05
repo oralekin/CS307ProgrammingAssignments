@@ -84,12 +84,12 @@ struct PipedChild {
 
 
 /**
- * @brief wraps createWrappedChild
+ * @brief wraps createPipedChild
  * 
  * executes a right/left
  * by passing in the required numbers
  */
-int doProgram(char *program, int num1, int num2) {
+int doLR(char *program, int num1, int num2) {
 
   char* argv[] = {program};
   struct PipedChild child = createPipedChild(program, argv);
