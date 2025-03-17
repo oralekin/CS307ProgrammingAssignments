@@ -149,6 +149,7 @@ int doLR(char *program, int num1, int num2) {
 
   // read 11 bytes because we know by spec that it is max 10
   char r_buffer[11];
+  // TODO: does this mess up up due to printf/scanf incompatibility with write/read?
   if (read(child.rx, r_buffer, 11) == -1) exit(1);
   return (atoi(r_buffer));
 }
@@ -195,18 +196,45 @@ int doNode(char* program, int num1, struct args childArgs) {
   return (atoi(r_buffer));
 }
 
+char *makeArrow(int n) {
+  /* depth (n) 0: >
+   * depth     1: --->
+   * depth     2: ------>
+   *
+   * dashes = 3 * (n)
+   * +1 for head
+   * +1 for space because it makes it nice
+   * +1 for null terminator
+   * total = 3 * (n) + 3 = 3(n+1)
+   */
+  int size = 3 * (n + 1);
+  char *r = malloc(sizeof(char) * size);
+
+  // last 3 characters of the string:
+  // there must be a better way but i couldn't find it
+  r[size - 3] = '>';
+  r[size - 2] = ' ';
+  r[size - 1] = '\0';
+  for (int i = 0; i < (size - 3); i++) r[i] = '-'; // rest is arrow body
+
+  return r;
+}
+
+char *indentation;
 
 int main(int argc, char *argv[]) {
   // three arguments from command line
   struct args args = parseArgs(argc, argv);
-  fprintf(stderr, "args in number: %d %d %d\n", args.curDepth, args.maxDepth, args.lr);
+  indentation = makeArrow(args.curDepth);
+  fprintf(stderr, "%scurrent depth: %d, lr: %d\n", indentation, args.curDepth, args.lr);
 
   // num1 from scanf
   int num1;
 
+  if (args.curDepth == 0) printf("Please enter num1 for the root: ");
   // shamelessly lifted from provided pr.c
   scanf("%d", &num1);
-  fprintf(stderr, "im depth=%d and got passed num1=%d\n", args.curDepth, num1);
+  fprintf(stderr, "%smy num1 is: %d\n", indentation, num1);
 
   // spawn left child for num2 unless im leaf
   int num2 = 1;
@@ -214,13 +242,15 @@ int main(int argc, char *argv[]) {
     struct args childArgs = {
       args.curDepth + 1,
       args.maxDepth,
-      L, 
+      L,
       NULL
     };
     num2 = doNode(argv[0], num1, childArgs);
+    fprintf(stderr, "%scurrent depth: %d, lr: %d, my num1: %d, my num2: %d\n",
+      indentation, args.curDepth, args.lr, num1, num2
+    );
   }
 
-  fprintf(stderr, "im depth=%d and read num2=%d\n", args.curDepth, num2);
 
   // decide what operation im doing: left or right
   if (args.lr == L) {
@@ -228,6 +258,8 @@ int main(int argc, char *argv[]) {
   } else if (args.lr == R) {
     num2 = doLR("./right", num1, num2);
   } else exit(1);
+
+  fprintf(stderr, "%smy result is: %d\n", indentation, num2);
 
   // spawn right child, get result
   if (args.curDepth != args.maxDepth) { 
@@ -240,7 +272,8 @@ int main(int argc, char *argv[]) {
     num2 = doNode(argv[0], num2, childArgs);
   }
   // printf result
-  printf("%d\n", num2);
+  if (args.curDepth == 0) printf("The final result is %d\n", num2);
+  else printf("%d\n", num2);
   // done  
   return 0;
 }
