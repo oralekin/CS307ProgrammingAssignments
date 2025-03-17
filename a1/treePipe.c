@@ -36,7 +36,7 @@ struct args args_err(char* message) {
 
 
 struct args parseArgs(int argc, char *argv[]) {
-  if (argc != 4) return args_err("Wrong arguments.");
+  if (argc != 4) return args_err("Usage: treePipe <current depth > <max depth > <left-right >");
   
   struct args args = {
     atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
@@ -44,7 +44,7 @@ struct args parseArgs(int argc, char *argv[]) {
   };
 
   // validation
-  if (args.curDepth > args.maxDepth) return args_err("curDepth must be less than or equal to ma");
+  if (args.curDepth > args.maxDepth) return args_err("curDepth must be less than or equal to maxDepth");
   if (args.lr != L && args.lr != R) return args_err("lr must be one of 0, 1");
 
   return args;
@@ -225,6 +225,10 @@ char *indentation;
 int main(int argc, char *argv[]) {
   // three arguments from command line
   struct args args = parseArgs(argc, argv);
+  if (args.error) {
+    fprintf(stderr, args.error);
+    exit(1);
+  }
   indentation = makeArrow(args.curDepth);
   fprintf(stderr, "%scurrent depth: %d, lr: %d\n", indentation, args.curDepth, args.lr);
 
@@ -232,6 +236,7 @@ int main(int argc, char *argv[]) {
   int num1;
 
   if (args.curDepth == 0) printf("Please enter num1 for the root: ");
+
   // shamelessly lifted from provided pr.c
   scanf("%d", &num1);
   fprintf(stderr, "%smy num1 is: %d\n", indentation, num1);
@@ -250,7 +255,6 @@ int main(int argc, char *argv[]) {
       indentation, args.curDepth, args.lr, num1, num2
     );
   }
-
 
   // decide what operation im doing: left or right
   if (args.lr == L) {
@@ -271,9 +275,11 @@ int main(int argc, char *argv[]) {
     };
     num2 = doNode(argv[0], num2, childArgs);
   }
+
   // printf result
   if (args.curDepth == 0) printf("The final result is %d\n", num2);
   else printf("%d\n", num2);
+
   // done  
   return 0;
 }
