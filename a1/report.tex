@@ -1,6 +1,64 @@
 \documentclass{article}
-
+\usepackage{geometry}
+\geometry{left=1.5cm, right=1.5cm, top=1.5cm, bottom=1.5cm}
+\usepackage{multicol, listings, minted, hyperref}
+\hypersetup{
+    colorlinks=true,
+	linkcolor=blue,
+	filecolor=magenta,      
+	urlcolor=blue,
+	pdftitle={treePipe report by oralekin},
+	pdfpagemode=FullScreen,
+}
 \begin{document}
-First document. This is a simple example, with no
-extra parameters or packages included.
+\title{{\Large CS307 Programming Assignment - 1}\\\texttt{treePipe}}
+\author{29421\\Ekin Oral\\oralekin@sabanciuniv.edu}
+\maketitle
+\begin{multicols}{2}
+\section{Introduction}
+This report details sections of my code that I thought might be divergent from a standard implementation following the assignment description (referred to as \verb|spec| in the source code).
+\section{Functions}
+\subsection[createPipedChild()]{Handling \texttt{fork()} and \texttt{execvp()} }
+In the assignment, fork is used in two cases: when resolving a child subtree and when executing \verb|./left| or \verb|./right|. In both cases, the child process must read and write to pipes, and the parent must write and read these pipes to communicate. I chose to abstract this behaviour into a procedure call \verb|createPipedChild()| which will: 
+\begin{enumerate}
+	\item use \verb|pipe()| to create two pipes
+	\item use \verb|fork()| to create a child
+	\item handle file descriptors: close unused pipe FD's and 
+
+		\item[parent 4.] child pid and pipe file descriptors will be \textbf{return}ed from the function
+		\item[child 4.] \verb|dup2()| will be used to set the \verb|stdin| and \verb|stdout| of the child to the pipes. \verb|dup2()| also closes the previous pipes.  
+
+	\item[child 5.] \verb|execvp()| will be called with the correct arguments
+\end{enumerate}
+This procedure only returns for the parent (the child will start executing a different executable) which recieves a struct with three integers: PID and two file descriptors\\
+I chose to define and use \verb|struct PipedChild| to return these values. The FD to the \underline{write end} of the pipe which the child will \underline{read from} is labeled \verb|tx| following tradition. Similarly, \verb|rx| is the read end of the pipe which the child will write to.
+\subsection{Specializing \texttt{createPipedChild}}
+Wanting to further abstract interactions with child processes, I chose to create two specialized functions that wrap \verb|createPipedChild| for each use case. 
+\subsubsection[Nodes]{Resolving subtrees: \texttt{doNode()}}
+I indentified that when a subtree is resolved, the input from the parent is three integer command line arguments and one integer sent through \verb|stdin|. I handled passing all of these arguments to the child node in \verb|doNode|, which makes sure \verb|argv| for the child process and the \verb|stdin| input are well formatted, eg. \verb|argv| is null-terminated correctly. I chose to have the name of the program to run passed to this function as its own parameter because I wanted to reuse \verb|struct args| that I used for returning parsed \verb|argv| inputs.\\
+I chose to use \verb|read()| to read the output of the child process, as according to the assignment description, the output of any program is expected to be at most 10 digits, and all handled processes have one output, which means double reads are not possible.
+\subsubsection[Program]{Running the program: \texttt{doLR()}}
+\verb|doLR()| is very similiar to \verb|doNode()|, except that it accepts two integer inputs and crucially, the name of the program to run. As in \verb|doNode()|, the inputs are formatted correctly by the function.\\
+This function is almost the same as \verb|doNode()| but I could not find a way to make merge these two functions in an elegant and ergonomic way.
+\section{Output to \texttt{stderr}}
+Briefly, I identified that every treePipe executable will stylize prints to \verb|stderr| with an arrow whose length depends on \verb|curDepth|. Therefore, I chose to create a string holding this arrow shape and pass it to \verb|fprintf| using \verb|"%s"|.\section{Error handling}
+I chose to ignore unlikely errors such as pipe creation or read/write failures. I included checking for incorrect CLI usage, as it was specified in Sample Run 1.
+\end{multicols}
+\centering\href{https://github.com/oralekin/CS307ProgrammingAssignments/tree/main/a1}{Original source and other tooling available on GitHub}
 \end{document}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
