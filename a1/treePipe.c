@@ -1,7 +1,7 @@
-/**
- *
- */
-
+/** Ekin Oral <oralekin@sabanciuniv.edu>
+  * oralekin, 29421
+  * 17/03/2025
+  */
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
