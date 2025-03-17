@@ -1,5 +1,5 @@
 /**
- * 
+ *
  */
 
 #include <stdio.h>
@@ -25,7 +25,7 @@ struct args {
   char *error;
 };
 
-struct args args_err(char* message) {
+struct args args_err(char *message) {
   struct args r = {
     -1, -1, -1,
     strdup(message)
@@ -37,7 +37,7 @@ struct args args_err(char* message) {
 
 struct args parseArgs(int argc, char *argv[]) {
   if (argc != 4) return args_err("Usage: treePipe <current depth > <max depth > <left-right >");
-  
+
   struct args args = {
     atoi(argv[1]), atoi(argv[2]), atoi(argv[3]),
     NULL
@@ -74,7 +74,7 @@ struct PipedChild {
  *             file being executed. The array of pointers must be terminated by
  *             a null pointer.
  */
- struct PipedChild createPipedChild(char *program, char *argv[]) {
+struct PipedChild createPipedChild(char *program, char *argv[]) {
   // create two pipes, one to send, one to recieve 
   // (parent) [send (tx), recieve (rx)]
   // inside: [ read, write ]
@@ -83,7 +83,7 @@ struct PipedChild {
   if (pipe(pipes[1]) == -1) exit(1);
 
   int pid = fork();
-  
+
   // some kinda error
   if (pid == -1) exit(1);
 
@@ -96,7 +96,7 @@ struct PipedChild {
       pid, pipes[0][1], pipes[1][0]
     };
     return r;
-    
+
   } else { // is child
     // close parent ends of pipes
     close(pipes[0][1]);
@@ -118,13 +118,13 @@ struct PipedChild {
 
 /**
  * @brief wraps createPipedChild
- * 
+ *
  * executes a right/left
  * by passing in the required numbers
  */
 int doLR(char *program, int num1, int num2) {
 
-  char* argv[] = {program, NULL}; // argv must be null terminated
+  char *argv[] = { program, NULL }; // argv must be null terminated
   struct PipedChild child = createPipedChild(program, argv);
   // // from assignment spec, strings through pipe are max length 10
   // // when writing to pipe, string should be null terminated.
@@ -134,7 +134,7 @@ int doLR(char *program, int num1, int num2) {
   // // from manpage: writes max n characters into some string
   // snprintf(w_buffer, 10, "%d", num1);
   // if (write(child.tx, w_buffer, 11) == -1) exit(1);
-  
+
   // // same for num2
   // snprintf(w_buffer, 10, "%d", num2);
   // if (write(child.tx, w_buffer, 11) == -1) exit(1);
@@ -156,18 +156,18 @@ int doLR(char *program, int num1, int num2) {
 
 /**
  * @brief wraps createPipedChild
- * 
+ *
  * creates and runs a new node until it exits
  * returns printed nuber from the node
  */
-int doNode(char* program, int num1, struct args childArgs) {
-  char* argv[5] = {program};
+int doNode(char *program, int num1, struct args childArgs) {
+  char *argv[5] = { program };
   argv[4] = NULL; // must be null terminated.
 
   // argument 1 curDepth
   // maximum depth is 2 so we can safely assume depth arguments are 4 characters.
   argv[1] = malloc(sizeof(char) * (4 + 1)); // +1 for null terminator
-  sprintf(argv[1], "%d", childArgs.curDepth); 
+  sprintf(argv[1], "%d", childArgs.curDepth);
 
   // argument 2 maxDepth
   // maximum depth is 2 so we can safely assume depth arguments are 4 characters.
@@ -266,11 +266,11 @@ int main(int argc, char *argv[]) {
   fprintf(stderr, "%smy result is: %d\n", indentation, num2);
 
   // spawn right child, get result
-  if (args.curDepth != args.maxDepth) { 
+  if (args.curDepth != args.maxDepth) {
     struct args childArgs = {
       args.curDepth + 1,
       args.maxDepth,
-      R, 
+      R,
       NULL
     };
     num2 = doNode(argv[0], num2, childArgs);
