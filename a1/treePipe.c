@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
   // three arguments from command line
   struct args args = parseArgs(argc, argv);
   if (args.error) {
-    fprintf(stderr, args.error);
+    fprintf(stderr, "%s\n", args.error);
     exit(1);
   }
   indentation = makeArrow(args.curDepth);
