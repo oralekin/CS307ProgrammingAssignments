@@ -1,0 +1,45 @@
+---
+BasedOnStyle: Chromium
+BreakBeforeBraces: Attach
+
+IndentWidth: 2
+TabWidth: 2
+UseTab: Always
+
+AccessModifierOffset: 0
+IndentAccessModifiers: false
+EmptyLineBeforeAccessModifier: Always
+EmptyLineAfterAccessModifier: Leave
+
+LambdaBodyIndentation: Signature
+ContinuationIndentWidth: 2
+
+AlignAfterOpenBracket: BlockIndent
+
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortLambdasOnASingleLine: All
+AllowShortLoopsOnASingleLine: true
+
+DerivePointerAlignment: false
+PointerAlignment: Right
+ReferenceAlignment: Pointer
+
+SpaceAfterCStyleCast: true
+SpaceAfterTemplateKeyword: false
+Cpp11BracedListStyle: false
+
+BinPackArguments: false
+AllowAllArgumentsOnNextLine: true
+BreakBeforeBinaryOperators: NonAssignment
+AlignOperands: AlignAfterOperator
+
+BreakConstructorInitializers: AfterColon
+ReflowComments: false
+
+KeepEmptyLines:
+  AtEndOfFile: true
+  AtStartOfBlock: true
+  AtStartOfFile: false
+MaxEmptyLinesToKeep: 2
