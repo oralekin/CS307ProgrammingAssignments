@@ -267,7 +267,12 @@ class SpinLocked {
 		guard.clear();
 	};
 
-	/**
+	void print() {
+		queues.print();
+	}
+
+	private:
+		/**
 	 * blocks until guard is found false and obtained.
 	 */
 	void spinForGuard() {
@@ -276,11 +281,6 @@ class SpinLocked {
 			;
 	}
 
-	void print() {
-		queues.print();
-	}
-
-	private:
 	void startTimer() {
 		timerStart = chrono::steady_clock::now();
 	}
