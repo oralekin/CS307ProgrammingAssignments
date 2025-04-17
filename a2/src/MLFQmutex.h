@@ -239,11 +239,8 @@ class SpinLocked {
 	 */
 	void lock() {
 		// check mutex by TAS, can get it without work if it was unowned.
-		if (!flag.test_and_set()) {
-			// fast path if mutex was unowned
-			guard.clear();
+		if (flag.test_and_set()) {
 			spinForGuard();
-		} else {
 			queues.enqueue(pthread_self());
 			garage.setPark();
 			guard.clear();
@@ -297,4 +294,4 @@ class SpinLocked {
 	}
 };
 
-using MLFQMutex = SuperSimple;
+using MLFQMutex = SpinLocked;
