@@ -8,3 +8,6 @@
 
 # misc files
 **.code-workspace
+
+!**/report.tex
+**/report.*
