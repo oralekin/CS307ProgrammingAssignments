@@ -8,7 +8,7 @@ UseTab: Always
 
 AccessModifierOffset: 0
 IndentAccessModifiers: false
-EmptyLineBeforeAccessModifier: Always
+EmptyLineBeforeAccessModifier: LogicalBlock
 EmptyLineAfterAccessModifier: Leave
 
 LambdaBodyIndentation: Signature
@@ -36,6 +36,7 @@ BreakBeforeBinaryOperators: NonAssignment
 AlignOperands: AlignAfterOperator
 
 BreakConstructorInitializers: AfterColon
+PackConstructorInitializers: NextLine
 ReflowComments: false
 
 KeepEmptyLines:
@@ -43,3 +44,4 @@ KeepEmptyLines:
   AtStartOfBlock: true
   AtStartOfFile: false
 MaxEmptyLinesToKeep: 2
+SeparateDefinitionBlocks: Always
