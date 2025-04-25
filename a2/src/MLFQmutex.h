@@ -63,95 +63,13 @@ class MLFQ {
 	}
 
 	void print() {
-		for (Queue<T> &queue : queues) queue.print();
-	}
-};
-
-class NewMLFQMutex {
-	chrono::duration<double> quantum;
-
-	MLFQ<pthread_t> queues;
-	Garage garage;
-
-	atomic_flag guard;
-	atomic_flag flag;
-
-	chrono::time_point<chrono::steady_clock> timerStart;
-
-	public:
-	NewMLFQMutex(int levels, double quantum) : quantum(quantum), queues(levels) {
-		printf("using mlfqmutex\n");
-	};
-
-	const NewMLFQMutex &operator=(const NewMLFQMutex &) = delete;
-
-
-	/**
-	 * blocks until obtains lock.
-	 */
-	void lock() {
-		// check lock by CAS, can get it if it was unowned.
-		if (!flag.test_and_set()) {
-			startTimer();
-			return;
+		printf("Waiting threads :\n");
+		for (int i = 0; i < queues.size(); i++) {
+			printf("Level %d: ", i);
+			queues[i].print();
 		}
-
-		spinForGuard();
-
-		// only this thread can act on this mutex now.
-		queues.enqueue(pthread_self());
-		garage.setPark();
-		guard.clear();
-		garage.park();
-		startTimer();
-	};
-
-
-	/**
-	 * releases lock
-	 *  assumption: only lock owner can call this
-	 */
-	void unlock() {
-		spinForGuard();
-		endTimer();
-		auto next = queues.dequeue();
-
-		// if theres a waiting thread, hand the mutex to it.
-		// otherwise, release mutex
-		if (next) garage.unpark(*next);
-		else flag.clear();
-
-
-		printf("unlock done %ld\n", pthread_self());
-		if (next) printf("handing off to %ld\n", *next);
-		guard.clear();
-	};
-
-	void print() {
-		queues.print();
-	}
-
-	private:
-
-	/**
-	 * blocks until guard is found false and obtained.
-	 */
-	void spinForGuard() {
-		while (guard.test_and_set())
-			// spin
-			;
-	}
-
-
-	void startTimer() {
-		timerStart = chrono::steady_clock::now();
-	}
-	void endTimer() {
-		auto timerEnd = chrono::steady_clock::now();
-		queues.updatePrio(pthread_self(), timerEnd - timerStart, quantum);
 	}
 };
-
 
 class SpinLocked {
 	chrono::duration<double> quantum;
@@ -199,7 +117,7 @@ class SpinLocked {
 		// otherwise, release mutex
 		if (next) garage.unpark(*next);
 		else flag.clear();
-		
+
 		guard.clear();
 	};
 
@@ -208,7 +126,7 @@ class SpinLocked {
 	}
 
 	private:
-		/**
+	/**
 	 * blocks until guard is found false and obtained.
 	 */
 	void spinForGuard() {

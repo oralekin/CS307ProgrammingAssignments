@@ -5,8 +5,6 @@
 #include <vector>
 using namespace std;
 
-// implement a concurrent priority queue
-
 template<class T>
 class SingleLockQueue {
 	private:
@@ -79,8 +77,72 @@ class SingleLockQueue {
 	}
 };
 
-// TODO: use double locking, use compare-swap for head? maybe for tail too?
-
-// use single locked implementation
 template<class T>
-using Queue = SingleLockQueue<T>;
+class MichaelScottQueue {
+	private:
+	struct Node {
+		T value;
+		Node *next;
+		Node() : next(nullptr) {};
+		Node(T _v) : value(_v), next(nullptr) {};
+		Node(T _v, Node *_next) : Node(_v) {
+			next = _next;
+		};
+	};
+
+	mutex headLock;
+	mutex tailLock;
+	// will dequeue from head
+	Node *dummyHead = new Node();
+	// will enqueue to tail
+	Node *tail = dummyHead;
+
+	public:
+	const SingleLockQueue<T> &operator=(const SingleLockQueue<T> &rhs) = delete;
+
+	void enqueue(T item) {
+		Node *newNode = new Node(item);
+
+		lock_guard<mutex> lg(tailLock);
+		tail->next = newNode;
+		tail = newNode;
+	};
+
+	T dequeue() {
+		lock_guard<mutex> lg(headLock);
+		Node *toDelete = dummyHead;
+		Node *newDummy = toDelete->next;
+
+		if (!newDummy) throw "queue empty";
+
+		delete toDelete;
+		dummyHead = newDummy;
+
+		return newDummy->value;
+	};
+
+	bool isEmpty() {
+		lock_guard<mutex> lg(headLock);
+		return dummyHead->next == nullptr;
+	};
+
+	void print() {
+		lock_guard<mutex> lg(headLock);
+
+		stringstream ss;
+
+		Node *cur = dummyHead->next;
+		if (!cur) ss << "Empty";
+		else
+			while (cur) {
+				ss << cur->value << " ";
+				cur = cur->next;
+			}
+		ss << endl;
+		printf("%s", ss.str().c_str());
+	}
+};
+
+// use Michael Scott
+template<class T>
+using Queue = MichaelScottQueue<T>;

@@ -2,7 +2,7 @@
 #include <random>
 #include <pthread.h>
 #include <unistd.h>
-#include "queue.h"
+#include <queue.h>
 #include <sched.h>
 #include "MLFQmutex.h"
 using namespace std;
