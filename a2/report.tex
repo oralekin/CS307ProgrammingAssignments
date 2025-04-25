@@ -1,0 +1,82 @@
+\documentclass{article}
+\usepackage{geometry}
+\geometry{left=1.5cm, right=1.5cm, top=1.5cm, bottom=1.5cm}
+\usepackage{multicol, listings, minted, hyperref, amsmath, algpseudocode}
+\hypersetup{
+    colorlinks=true,
+	linkcolor=blue,
+	filecolor=magenta,      
+	urlcolor=blue,
+	pdftitle={MLFQ Mutex Implementation Report},
+	pdfpagemode=FullScreen,
+}
+\begin{document}
+\title{{\Large CS307 Programming Assignment - 2}\\{MLFQ Mutex Implementation}}
+\author{[author redacted]}
+\maketitle
+\begin{multicols*}{2}
+\section{Introduction}
+In this assignment, I implemented a mutex which uses the MLFQ algorithm to choose the a recipient of the lock when it is requested by multiple threads. In this report, I outline the choices I made for the underlying structures and algorithms.
+\section{Concurrent Queue}
+When implementing a concurrent queue, I started with a single mutex synchronizing all reads and writes of a singly-linked queue due to the simplicity of implementation. This implementation is trivially thread-safe, assuming the mutex is correct, as it uses the mutex to synchronize all accesses. This simple implementation is available as \verb|SingleLockQueue<T>|.
+
+After confirming that the single lock queue is valid, I modified my implementation to use the Michael and Scott concurrent queue algorithm. This algorithm is implemented by always storing a dummy node in the queue. Enqueue operations are unchanged, dequeue operations work by discarding the current dummy node, making the current head the dummy node, and returning the value of the new dummy node. 
+
+Guaranteeing that a node always exists in the list decouples our head and tail pointers: a dequeue operation may never change the tail pointer. This allows us to use two seperate mutexes for enqueue and dequeue operations, which makes the queue more performant in concurrent applications. This implementation is available as \verb|MichaelScottQueue<T>| as well as using alias \verb|Queue<T>|.
+\section{MLFQ Mutex}
+\subsection{Garage}
+I did not modify the provided \verb|Garage| implementation.
+\subsection{Multi-level Queue}
+When implementing the MLFQ Mutex, I chose to seperate the handling of the level queues to let the mutex implementation only handle concurrency issues. For this, I implemented a class \verb|MLFQ<T>|, a multi-level queue which stores the level associated with an item and allows the level of an item be changed according to the formula specified in the assignment.
+
+The queue exposes the usual methods for queues, \verb|enqueue(...)| and \verb|dequeue()|, transparently handling priority levels.
+
+The multi-level queue has two member variables: \verb|queues|, a vector of the aforementioned concurrent queues and \verb|priorities|, a map from items to their priority level as integers.
+The vector is a \verb|vector<V>| from the C++ standard library. The vector gets initialized with a given number of queues during construction and does not grow or shrink during the lifetime of \verb|MLFQ<T>|. The elements of the vector are initialized to empty queues implicitly by the default queue constructor.
+
+The map is \verb|unordered_map<K, V>| from the C++ standard library, which I chose due to being used in the reference \verb|Garage| implementation. \verb|unordered_map| provides an override for the index operator \verb|[k]| which retrieves an item matching the provided key if it exists, and adds an entry with the key if it does not exist. This was useful because the default for integers is \verb|0|, which is also the default priority level for threads.
+
+\subsubsection{\texttt{updatePrio(...)}}
+\verb|MLFQ<T>| also exposes \verb|updatePrio(...)| for updating priorities of items using the formula provided for the assignment. \verb|updatePrio| accepts three parameters: item to modify the priority of, runtime associated with the item, and quantum. The method will increment the priority of the given item by $\min(\lfloor\frac{time}{quantum}\rfloor, levels)$ where \verb|levels| is the number of queues. This ensures that priority values cannot have values higher than the number of queues.
+\subsection{MLFQ Mutex}
+The MLFQ Mutex is implemented by the \verb|SpinLocked| class, aliased to \verb|MLFQMutex|. The method of locking and unlocking the mutex is similiar to the Solaris mutex. The class contains two \verb|atomic_flag|s, specialized atomic booleans from the C++ standard library to store locked state, an \verb|MLFQ| queue of waiting threads, a \verb|Garage|, and a variable for storing the start time of the currently executing thread.
+
+The MLFQ Mutex uses spinning with atomic Test-and-Set to synchronize queue accesses. As \verb|lock| and \verb|unlock| methods are short, threads won't need to spin for long until they have gain access. When waiting for the mutex to be released, threads are marked as sleeping, and the operating system won't schedule them, leading to few wasted cycles.
+\subsubsection{\texttt{lock()}}
+\paragraph{Pseudocode}
+\begin{algorithmic}[1]
+	\State atomically check if flag is set, and set if it isn't.
+	\If{flag was set} \Comment fast path outside this block
+		 \State obtain \verb|guard| by spinning
+		 \State add current thread to queue
+		 \State set current thread to park soon
+		 \State release \verb|guard| by setting it to false
+		 \State park current thread
+	\EndIf
+	\State set \verb|timerStart| to current time
+\end{algorithmic}
+\paragraph{Analysis}
+The \verb|lock| method is almost the same as the Solaris mutex implementation in the textbook, except that it has a fast path inspired by the Linux mutex implementation. The fast path is taken when \verb|flag| is unset. \verb|std::atomic::atomic_flag| provides a method \verb|atomic_flag::test_and_set()| which sets the variable to True and returns its old value atomically. By using this method, I avoid race conditions that may occur when multiple threads read and then write this variable. This guarantees that only one thread may take the fast path until all threads have released their locks. The dual of this operation within \verb|unlock()| is that \verb|flag| is never set to False when there is a thread in the queue, as is the case in the reference Solaris implementation.
+
+\verb|setPark()| is used to signal to \verb|Garage| that this thread will park in the future, so that if another thread calls \verb|unlock| and tries to unpark this thread, \verb|Garage| will remember the unpark operation.
+\subsubsection{\texttt{unlock()}}
+\paragraph{Pseudocode}
+\begin{algorithmic}[1]
+	\State $\verb|currentTime| \gets \text{current time}$
+	\State obtain \verb|guard| by spinning
+	\State update priority of this thread using \verb|currentTime|
+	\If{queue is empty}
+		\State set \verb|flag| to false
+	\Else
+		\State unpark the next thread in queue
+	\EndIf
+	\State release \verb|guard| by setting it to false
+\end{algorithmic}
+\paragraph{Analysis}
+\verb|unlock| is similiar to the Solaris implementation with two differences: the time at which it is called is saved before any syncronization takes place, and critical section is synchronized using \verb|lock|. The first is to ensure that the time measurement is as accurate as possible.
+
+When a thread unlocks, it will check if any threads are in the queue. If there is a waiting thread, it will be unparked. This can be considered the mutex being passed from the current thread to the next one. Due to the MLFQ algorithm, threads with shorter critical sections will be more likely to be selected.
+\subsubsection{Conclusion}
+I implemented lock and unlock methods similiar to those of the Solaris mutex. Deadlocks are not possible when locking because of the two paths, the fast path may only be taken by one thread until the mutex is released with no threads in the queue. The long path is guarded by a spinlock, which is otherwise only used during unlocking. Thus, the critical section in \verb|lock| may only wait to acquire a lock on a concurrent queue. In \verb|unlock|, the same spinlock is used to guard queue and garage accesses. The critical section of \verb|unlock| may also only wait for a lock on a concurrent queue. Because these methods are the only ones accessing the queues, and they are already synchronized by the guard, queue accesses may not cause a deadlock.
+\end{multicols*}
+\end{document}
