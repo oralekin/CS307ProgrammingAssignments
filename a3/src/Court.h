@@ -21,14 +21,14 @@ class Court {
 	sem_t entryway_lock;
 
 	// used if there is no referee: players will synchronize
-	pthread_barrier_t matchEnd;
+	pthread_barrier_t matchEnd_barrier;
 	// used if theres a referee, referee will unlock the turnstile for other players
 	sem_t matchEnd_turnstile;
 
 	// mutex for changing playing state
 	// when a thread wants to start a match, it must acquire this
 	// when a thread wants to check if a match is being played, they must acquire this lock
-	sem_t playing_lock;
+	sem_t state_lock;
 	// state variables, protected by
 	bool playing = false;
 	int onCourt_count = 0;
@@ -46,11 +46,11 @@ class Court {
 
 
 		sem_init(&entryway_lock, 0, 1);
-		sem_init(&playing_lock, 0, 1);
+		sem_init(&state_lock, 0, 1);
 
 		// will be used when players are leave()'ing
 		if (referee) sem_init(&matchEnd_turnstile, 0, 0);
-		else pthread_barrier_init(&matchEnd, 0, totalNeeded);
+		else pthread_barrier_init(&matchEnd_barrier, 0, totalNeeded);
 	}
 
 	/*
@@ -74,7 +74,7 @@ class Court {
 		// wait until other player is done entering and no match is being played.
 		sem_wait(&entryway_lock);
 
-		sem_wait(&playing_lock);
+		sem_wait(&state_lock);
 		// waited until there is no match, i will get on court.
 		onCourt_count++;
 
@@ -87,7 +87,7 @@ class Court {
 			);
 
 			playing = true;
-			sem_post(&playing_lock);
+			sem_post(&state_lock);
 
 
 			if (refereeNeeded) {
@@ -97,7 +97,7 @@ class Court {
 
 
 		} else {
-			sem_post(&playing_lock);
+			sem_post(&state_lock);
 			printf(
 				"Thread ID: %ld, There are only %d players, passing some time.\n",
 				pthread_self(),
@@ -122,7 +122,7 @@ class Court {
 		}
 
 		// i will check playing state, therefore need mutex.
-		sem_wait(&playing_lock);
+		sem_wait(&state_lock);
 
 		// leave() is unreachable by threads if there is a match that they are not a part of.
 		//   => if playing==true, this thread is part of the match.
@@ -133,12 +133,12 @@ class Court {
 				"Thread ID: %ld, I was not able to find a match and I have to leave.\n",
 				pthread_self()
 			);
-			sem_post(&playing_lock);
+			sem_post(&state_lock);
 			return;
 		} else {	// im trying to leave a match.
 
 			// im done modifying state for now.
-			sem_post(&playing_lock);
+			sem_post(&state_lock);
 
 			if (refereeNeeded) {
 				if (pthread_equal(referee, pthread_self())) {	 // im referee
@@ -148,11 +148,11 @@ class Court {
 						pthread_self()
 					);
 
-					onCourt_count--; // referee leaves
+					onCourt_count--;	// referee leaves
 
 					// unlock turnstile for other players.
 					sem_post(&matchEnd_turnstile);
-					
+
 				} else {	// this thread is not the referee
 					// wait for unlock from ref (or player leaving before me)
 					sem_wait(&matchEnd_turnstile);
@@ -162,33 +162,19 @@ class Court {
 					);
 
 					onCourt_count--;
-
-					/* precondition for last player to leave:
-           *   other threads cannot be in leave() when i am in turnstile
-					 *     all playing in this match left
-					 *     all others are waiting for me to end the match
-          */
-					if (onCourt_count == 0) {
-						printf(
-							"Thread ID: %ld, everybody left, letting any waiting people "
-							"know.\n",
-							pthread_self()
-						);
-
-						// mark match ended
-						// by precondition, no other thread may be at a point where they access playing.
-						playing = false;
-						// unlock entryway
-						sem_post(&entryway_lock);
-						//do NOT unlock turnstile. referee will unlock next time the match ends.
-					} else {	// not last: leave turnstile unlocked for players after me
+					if (onCourt_count == 0) doLastLeave();
+					else	// not last: leave turnstile unlocked for players after me
 						sem_post(&matchEnd_turnstile);
-					}
 				}
 			} else {
-				// players will leave when everyone is done playing
-				// TODO:
-				throw "unimplemented";
+				pthread_barrier_wait(&matchEnd_barrier);
+				sem_wait(&state_lock);
+
+				onCourt_count--;
+
+				if (onCourt_count == 0) doLastLeave();
+
+				sem_post(&state_lock);
 			}
 		}
 	}
@@ -201,4 +187,29 @@ class Court {
    * this method in the class signature but do not implement it.
    */
 	void play();
+
+
+	private:
+
+	// precondition: entryway locked
+	/* invariant: 
+	 * 	when last player is leaving:
+	 *   other threads cannot be in leave() when i am in turnstile
+	 *     all playing in this match left
+	 *     all others are waiting for me to end the match
+	 */
+	void doLastLeave() {
+		printf(
+			"Thread ID: %ld, everybody left, letting any waiting people "
+			"know.\n",
+			pthread_self()
+		);
+
+		// mark match ended
+		// by precondition, no other thread may be at a point where they access playing.
+		playing = false;
+		// unlock entryway
+		sem_post(&entryway_lock);
+		//do NOT unlock turnstile. referee will unlock next time the match ends.
+	}
 };
