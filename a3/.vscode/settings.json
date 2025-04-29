@@ -1,0 +1,16 @@
+{
+  "files.associations": {
+    "atomic": "cpp",
+    "unordered_map": "cpp",
+    "*.ipp": "cpp",
+    "condition_variable": "cpp",
+    "chrono": "cpp",
+    "optional": "cpp",
+    "ranges": "cpp",
+    "stdexcept": "cpp",
+    "semaphore": "cpp",
+    "limits": "cpp",
+    "barrier": "cpp",
+    "exception": "cpp"
+  }
+}
