@@ -31,6 +31,8 @@ SpaceAfterTemplateKeyword: false
 Cpp11BracedListStyle: false
 
 BinPackArguments: false
+BinPackLongBracedList: true
+BinPackParameters: OnePerLine
 AllowAllArgumentsOnNextLine: true
 BreakBeforeBinaryOperators: NonAssignment
 AlignOperands: AlignAfterOperator
