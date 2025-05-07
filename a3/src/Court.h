@@ -3,6 +3,7 @@
 #include <exception>
 
 #include <unistd.h>
+#include <atomic>
 
 using namespace std;
 
@@ -31,7 +32,7 @@ class Court {
 	sem_t state_lock;
 	// state variables, protected by
 	bool playing = false;
-	int onCourt_count = 0;
+	atomic_int onCourt_count = 0;
 
 	// id of the referee thread, if exists.
 	pthread_t referee;
@@ -80,7 +81,7 @@ class Court {
 
 		// if we have enough players, i will start the match
 		// become referee if needed
-		if (onCourt_count == playersNeeded + refereeNeeded) {
+		if (onCourt_count == totalNeeded) {
 			printf(
 				"Thread ID: %ld, There are enough players, starting a match.\n",
 				pthread_self()
@@ -92,7 +93,6 @@ class Court {
 
 			if (refereeNeeded) {
 				referee = pthread_self();
-				// TODO:
 			}
 
 
@@ -101,7 +101,7 @@ class Court {
 			printf(
 				"Thread ID: %ld, There are only %d players, passing some time.\n",
 				pthread_self(),
-				onCourt_count
+				onCourt_count.load()
 			);
 			sem_post(&entryway_lock);
 		}
@@ -113,8 +113,7 @@ class Court {
 		if (sem_trywait(&entryway_lock) == 0) {
 			onCourt_count--;
 			printf(
-				"Thread ID: %ld, I was not able to find a match and I have to leave "
-				"FAST.\n",
+				"Thread ID: %ld, I was not able to find a match and I have to leave.\n",
 				pthread_self()
 			);
 			sem_post(&entryway_lock);
@@ -157,7 +156,7 @@ class Court {
 					// wait for unlock from ref (or player leaving before me)
 					sem_wait(&matchEnd_turnstile);
 					printf(
-						"Thread ID: %ld, I am a player and now, I am leaving TURNSTILE.\n",
+						"Thread ID: %ld, I am a player and now, I am leaving.\n",
 						pthread_self()
 					);
 
