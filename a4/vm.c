@@ -304,14 +304,13 @@ void initOS() {
 
 // Process functions to implement
 int createProc(char *fname, char *hname) {
-	if (mem[OS_STATUS] & 1 == 0) {
+	if ((mem[OS_STATUS] & 0x0001) != 0x0000) {
 		fprintf(stdout, "The OS memory region is full. Cannot create a new PCB.\n");
 		return 0;
 	}
 
 	uint16_t ptbr = (OS_MEM_SIZE * PAGE_SIZE / 2) + (PAGECOUNT * mem[Proc_Count]);
 	// if ptbr > end of pt page - 2 page tables, there is no space for another page table.
-	const int something = (((OS_MEM_SIZE + 1) * 2048) - (2 * (PAGECOUNT)));
 	if (ptbr >= (((OS_MEM_SIZE + 1) * 2048) - (2 * (PAGECOUNT))))
 		mem[OS_STATUS] = 1;
 
@@ -334,9 +333,6 @@ int createProc(char *fname, char *hname) {
 			}
 
 			fprintf(stdout, "Cannot create %s segment.", i < 2 ? "code" : "heap");
-			// set os status to 1, no space for allocation
-			mem[OS_STATUS] = 1;
-
 			return 0;
 		}
 	}
@@ -352,6 +348,16 @@ int createProc(char *fname, char *hname) {
 	// load code and heap
 	ld_img(fname, page_offsets + 0, PAGE_SIZE * 2);
 	ld_img(hname, page_offsets + 2, PAGE_SIZE * 2);
+
+	// check if next pcb would overflow
+	if ((PCBS_START + (mem[Cur_Proc_ID] * PCB_SIZE) + 2)	// next pcb's end
+			>																									// is at or after
+			(OS_MEM_SIZE * (PAGE_SIZE / 2))	 // first address after pcb table region
+	)
+		mem[OS_STATUS] = 1;
+
+
+	// check if next page table would overflow
 
 	return 1;
 }
@@ -456,7 +462,6 @@ static inline void tyld() {
 
 	// do nothing if we want to continue executing
 	if (next_pid == current_pid) return;
-
 
 	// save current pid
 	current_pcb[PC_PCB] = reg[RPC];
